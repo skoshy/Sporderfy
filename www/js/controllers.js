@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $http, $ionicModal, $timeout) {
+.controller('AppCtrl', function($scope, $http, $ionicModal, $cordovaOauth, $timeout) {
 
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
@@ -24,7 +24,14 @@ angular.module('starter.controllers', [])
     ,response_type: 'code'
     ,client_id: '5704b7589cb0485584a0e368da6d0c5e'
     ,redirect_uri: '/playlists'
-    ,scope: spotify_permissions.join('%20')
+    ,scope: [
+      'playlist-read-private'
+      ,'playlist-read-collaborative'
+      ,'playlist-modify-public'
+      ,'playlist-modify-private'
+      ,'user-library-read'
+      ,'user-library-modify'
+    ]
   };
 
   // Create the login modal that we will use later
@@ -46,36 +53,32 @@ angular.module('starter.controllers', [])
 
   // Perform the login action when the user submits the login form
   $scope.doLogin = function() {
-    console.log('here:');
+    console.log('OAuth here:');
 
     // Simulate a login delay. Remove this and replace with your login
     // code if using a login system
-    $http({
-      method: 'GET'
-      ,url: 'https://accounts.spotify.com/authorize'
-      ,params: $scope.spotify
-    }).then(function successCallback(response) {
-      console.log(response);
-
-      $http({
-        method: 'POST'
-        ,url: 'https://accounts.spotify.com/api/token'
-        ,params: {
-          grant_type: 'authorization_code'
-          ,code: ''
-        }
-      }).then(function successCallback(response) {
-        console.log(response);
-        $scope.closeLogin();
-      }, function errorCallback(response) {
-        console.log(response);
-        $scope.closeLogin();
-      });
-
-      $scope.closeLogin();
-    }, function errorCallback(response) {
-      console.log(response);
-      $scope.closeLogin();
+    $cordovaOauth.spotify($scope.spotify.client_id, $scope.spotify.scope).then(function(result) {
+        // Access token: result.access_token
+        // Expires in: result.expires_in
+        window.localStorage['access_token'] = result.access_token;
+        
+        // Get a user's ID
+        $http({
+          method: 'GET'
+          ,headers: {
+            'Authorization': 'Bearer ' + window.localStorage['access_token']
+          }
+          ,url: 'https://api.spotify.com/v1/me'
+        }).then(function successCallback(response) {
+          // this callback will be called asynchronously
+          // when the response is available
+          console.log(JSON.stringify(response));
+        }, function errorCallback(response) {
+          // called asynchronously if an error occurs
+          // or server returns response with an error status.
+        });
+    }, function(error) {
+        console.log(error);
     });
   };
 })

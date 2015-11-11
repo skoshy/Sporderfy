@@ -1204,7 +1204,7 @@ angular.module("oauth.providers", ["oauth.utils"])
             spotify: function(clientId, appScope, options) {
                 var deferred = $q.defer();
                 if(window.cordova) {
-                    var cordovaMetadata = cordova.require("cordova/plugin_list").metadata;
+                    var cordovaMetadata = cordova.require("cordova/plugin_list");
                     if($cordovaOauthUtility.isInAppBrowserInstalled(cordovaMetadata) === true) {
                         var redirect_uri = "http://localhost/callback";
                         if(options !== undefined) {
@@ -1714,7 +1714,9 @@ angular.module("oauth.utils", [])
                 var inAppBrowserNames = ["cordova-plugin-inappbrowser", "org.apache.cordova.inappbrowser"];
 
                 return inAppBrowserNames.some(function(name) {
-                    return cordovaMetadata.hasOwnProperty(name);
+                    return cordovaMetadata.some(function(plugin) {
+                        return plugin.pluginId == name;
+                    });
                 });
             },
 
