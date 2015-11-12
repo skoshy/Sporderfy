@@ -61,7 +61,14 @@ angular.module('starter.services', [])
 	function getAllPlaylists(offset) {
 		promise = requestSynch('GET', 'https://api.spotify.com/v1/users/'+user.id+'/playlists', true, {limit: '50', offset: offset});
 		promise.then(function(response){
-			appData.playlists = appData.playlists.concat(response.data.items);
+			// Only add in YOUR playlists
+			var userPlaylists = [];
+			angular.forEach(response.data.items, function(playlist, i) {
+				if (playlist.owner.id == user.id)
+					userPlaylists.push(playlist);
+			});
+
+			appData.playlists = appData.playlists.concat(userPlaylists);
 
 			if (response.data.total > appData.playlists.length)
 				getAllPlaylists(appData.playlists.length);
